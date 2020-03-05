@@ -40,4 +40,5 @@ dist/**/*
 # ignore yarn.lock
 yarn.lock
 
-access_token.txt
+/access_token.txt
+/vehicle_id.txt
