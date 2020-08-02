@@ -1,5 +1,4 @@
-import * as https from 'https'
-import {RequestOptions} from "https";
+import {urlParse} from 'https://deno.land/x/url_parse/mod.ts';
 
 const TESLA_SERVER_HOSTNAME: string = 'owner-api.teslamotors.com';
 const TESLA_CLIENT_ID: string = '81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384';
@@ -26,10 +25,10 @@ type VehicleInfo = {
     backseat_token: any;
     backseat_token_updated_at: any;
 };
-type BasicVehicleCallResponse = {
+type BasicVehicleCallResponse = {
     response: VehicleInfo;
 };
-type VehicleCountResponse = {
+type VehicleCountResponse = {
     response: VehicleInfo[];
     count: number;
 };
@@ -41,9 +40,13 @@ type OAuthResponse = {
     created_at: number;
 };
 
+interface RequestInitWithHeaders extends RequestInit {
+    headers: Headers;
+}
+
 export class ApiCaller {
 
-    _accessToken: string;
+    _accessToken: string | undefined;
 
     constructor(token?: string) {
         this._accessToken = token;
@@ -54,18 +57,20 @@ export class ApiCaller {
             throw new Error('Missing required parameter(s).');
         }
         const path = '/oauth/token';
-        let postData = JSON.stringify({
+        let postData = {
             grant_type: 'password',
             client_id: TESLA_CLIENT_ID,
             client_secret: TESLA_CLIENT_SECRET,
             email,
             password,
-        });
-        let options = this._getPostOptions(path, postData.length);
-        let r = await this._call<OAuthResponse>(options, postData);
+        };
+        const url = this._getURL(path);
+        let options = this._getPostOptions(postData);
+        let r = await this._call<OAuthResponse>(url, options);
         return r.access_token;
     }
 
+    /*
     async getVehicleList() {
         const path = '/api/1/vehicles';
         let options = this._getGetOptions(path);
@@ -85,65 +90,63 @@ export class ApiCaller {
         return await this._call<BasicVehicleCallResponse>(options);
     }
 
-    async _call<T>(options: RequestOptions, postDataString?: string) {
-        return new Promise<T>((resolve, reject) => {
-            let responsePayload: string = '';
-            let req = https.request(options, (res) => {
-                //console.log('statusCode:', res.statusCode);
-                //console.log('headers:', res.headers);
-
-                res.setEncoding('utf8');
-                res.on('data', (d) => {
-                    responsePayload += d;
-                });
-
-                res.on('end', () => {
-                    let jsonPayload = JSON.parse(responsePayload);
-                    resolve(jsonPayload);
-                })
-            });
-
-            req.on('error', (e) => {
-                reject(e);
-            });
-
-            if (postDataString) {
-                req.write(postDataString);
-            }
-            req.end();
-        });
+    async climateControlOn(id: string) {
+        const path = `/api/1/vehicles/${id}/command/auto_conditioning_start`;
+        let options = this._getPostOptions(path);
+        return await this._call<BasicVehicleCallResponse>(options);
     }
 
-    _getGetOptions(path: string) {
-        let options = this._getCommonOptions(path);
+    async climateControlOff(id: string) {
+        const path = `/api/1/vehicles/${id}/command/auto_conditioning_stop`;
+        let options = this._getPostOptions(path);
+        return await this._call<BasicVehicleCallResponse>(options);
+    }
+    */
+
+    async _call<T>(url: URL, options: RequestInitWithHeaders) {
+        const res = await fetch(url, options);
+        if (res.status !== 200) {
+            console.error(`Did not get a 200 status code, got a ${res.status} instead. statusText: ${res.statusText}`);
+            // console.log('headers:', res.headers);
+            console.error(await res.text());
+            throw new Error(`Tesla API call failed with HTTP code ${res.status}`);
+        }
+        return await res.json();
+    }
+
+    _getGetOptions(): RequestInitWithHeaders {
+        let options = this._getCommonOptions();
         options.method = 'GET';
         return options;
     }
 
-    _getPostOptions(path: string, contentLength?: number) {
-        let options = this._getCommonOptions(path);
+    _getPostOptions(postData: any): RequestInitWithHeaders {
+        let options = this._getCommonOptions();
         options.method = 'POST';
-        options.headers['Content-Type'] = 'application/json';
-        if (contentLength) {
-            options.headers['Content-Length'] = contentLength;
-        }
+        options.headers.append('Content-Type', 'application/json');
+        options.body = JSON.stringify(postData);
+        options.headers.append('Content-Length', '' + options.body.length);
         return options;
     }
 
-    _getCommonOptions(path: string) {
-        let options: RequestOptions = {
+    _getURL(path: string): URL {
+        return urlParse({
+            protocol: 'https',
             hostname: TESLA_SERVER_HOSTNAME,
+            pathname: path,
             port: 443,
-            path,
-            headers: {
-                'User-Agent': API_USER_AGENT,
-                'X-Tesla-User-Agent': API_X_Tesla_User_Agent,
-            }
-        };
-        if (this._accessToken) {
-            options.headers['Authorization'] = `Bearer ${this._accessToken}`;
-        }
-        return options;
+        });
     }
 
+    _getCommonOptions(): RequestInitWithHeaders {
+        const headers = new Headers();
+        headers.append('User-Agent', API_USER_AGENT);
+        headers.append('X-Tesla-User-Agent', API_X_Tesla_User_Agent);
+        if (this._accessToken) {
+            headers.append('Authorization', `Bearer ${this._accessToken}`);
+        }
+        return {
+            headers
+        };
+    }
 }

@@ -1,12 +1,11 @@
-import { promises as fs } from 'fs';
-import program from 'commander';
+import Denomander from "https://deno.land/x/denomander/mod.ts";
 
-import { ApiCaller } from './apiCaller';
+import { ApiCaller } from './apiCaller.ts';
 
 const ACCESS_TOKEN_FILEPATH: string = 'access_token.txt';
 const VEHICLE_ID_FILEPATH: string = 'vehicle_id.txt';
 
-
+/*
 let getTokenFromFile = async (): Promise<string> => {
     let _accessToken;
     try {
@@ -34,18 +33,27 @@ let getVehicleIdFromFile = async (): Promise<string> => {
     }
     return _vehicleID;
 };
+*/
 
-program.version('0.0.1');
+const program = new Denomander(
+    {
+        app_name: "Thunder Beaver",
+        app_description: "Simple app to interact with the Tesla API",
+        app_version: "0.0.2"
+    }
+);
+
 
 program
-    .command('getToken <email> <password>')
+    .command('getToken [email] [password]')
     .description('Generates an API token that is valid for 45 days')
-    .action(async (email, password) => {
+    .action(async ({email, password}: {email: string, password: string}) => {
         let apiCaller = new ApiCaller();
         let result = await apiCaller.getAccessToken(email, password);
-        await fs.writeFile(ACCESS_TOKEN_FILEPATH, result);
+        await Deno.writeTextFile(ACCESS_TOKEN_FILEPATH, result);
     });
 
+/*
 program
     .command('getVehicleList')
     .description('Gets the list of vehicles associated with the current account')
@@ -87,12 +95,27 @@ program
         console.log(JSON.stringify(result, null, 4));
     });
 
-async function main() {
-    await program.parseAsync(process.argv);
-}
+program
+    .command('climateControlOn')
+    .description('Turns on the climate control (either A/C or heat) to reach the preset target temperature')
+    .action(async () => {
+        let token = await getTokenFromFile();
+        let vehicleID = await getVehicleIdFromFile();
+        let apiCaller = new ApiCaller(token);
+        let result = await apiCaller.climateControlOn(vehicleID);
+        console.log(result);
 
-main().then(() => {
-    console.log('All done');
-}).catch(err => {
-    console.error(err);
-});
+        let i = 0;
+        setInterval(async () => {
+            i++;
+            let result = await apiCaller.getVehicleData(vehicleID);
+            execSync(`notify-send "Tesla temp" "Temperature in the car is now : ${result.response.climate_state.inside_temp}"`);
+            if (i > 10) {
+                process.exit(0);
+            }
+        }, 1 * 60 * 1000);
+    });
+*/
+
+// program.parse(Deno.args);
+program.parse(['getToken', 'asdasd', 'asdasdasd']);
