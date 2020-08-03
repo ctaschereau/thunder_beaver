@@ -1,15 +1,14 @@
-import Denomander from "https://deno.land/x/denomander/mod.ts";
+import { Denomander } from './deps.ts';
 
 import { ApiCaller } from './apiCaller.ts';
 
 const ACCESS_TOKEN_FILEPATH: string = 'access_token.txt';
 const VEHICLE_ID_FILEPATH: string = 'vehicle_id.txt';
 
-/*
 let getTokenFromFile = async (): Promise<string> => {
     let _accessToken;
     try {
-        _accessToken = await fs.readFile(ACCESS_TOKEN_FILEPATH, 'utf8');
+        _accessToken = await Deno.readTextFile(ACCESS_TOKEN_FILEPATH);
     } catch (err) {
         if (err.code === 'ENOENT') {
             throw new Error('No access token. getAccessToken should be called first.');
@@ -23,7 +22,7 @@ let getTokenFromFile = async (): Promise<string> => {
 let getVehicleIdFromFile = async (): Promise<string> => {
     let _vehicleID;
     try {
-        _vehicleID = await fs.readFile(VEHICLE_ID_FILEPATH, 'utf8');
+        _vehicleID = await Deno.readTextFile(VEHICLE_ID_FILEPATH);
     } catch (err) {
         if (err.code === 'ENOENT') {
             throw new Error('No vehicle ID. getVehicleList should be called first.');
@@ -33,7 +32,7 @@ let getVehicleIdFromFile = async (): Promise<string> => {
     }
     return _vehicleID;
 };
-*/
+
 
 const program = new Denomander(
     {
@@ -51,9 +50,10 @@ program
         let apiCaller = new ApiCaller();
         let result = await apiCaller.getAccessToken(email, password);
         await Deno.writeTextFile(ACCESS_TOKEN_FILEPATH, result);
+        console.log('Token has been written to file');
     });
 
-/*
+
 program
     .command('getVehicleList')
     .description('Gets the list of vehicles associated with the current account')
@@ -63,14 +63,15 @@ program
         let result = await apiCaller.getVehicleList();
         if (result.count === 0) {
             console.log('No vehicle yet.');
-            process.exit(0);
+            Deno.exit(0);
         }
         if (result.count > 1) {
             console.error('More than one Tesla ; not implemented');
-            process.exit(1);
+            Deno.exit(1);
         }
         let carData = result.response[0];
-        await fs.writeFile(VEHICLE_ID_FILEPATH, carData.id_s);
+        await Deno.writeTextFile(VEHICLE_ID_FILEPATH, carData.id_s);
+        console.log('Vehicule id has been written to file');
     });
 
 program
@@ -104,18 +105,19 @@ program
         let apiCaller = new ApiCaller(token);
         let result = await apiCaller.climateControlOn(vehicleID);
         console.log(result);
-
+        /*
         let i = 0;
         setInterval(async () => {
             i++;
             let result = await apiCaller.getVehicleData(vehicleID);
             execSync(`notify-send "Tesla temp" "Temperature in the car is now : ${result.response.climate_state.inside_temp}"`);
             if (i > 10) {
-                process.exit(0);
+                Deno.exit(0);
             }
         }, 1 * 60 * 1000);
+        */
     });
-*/
+
 
 // program.parse(Deno.args);
-program.parse(['getToken', 'asdasd', 'asdasdasd']);
+program.parse(['getVehicleData']);

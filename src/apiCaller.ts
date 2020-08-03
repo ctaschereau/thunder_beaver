@@ -1,4 +1,4 @@
-import {urlParse} from 'https://deno.land/x/url_parse/mod.ts';
+import { urlParse } from './deps.ts';
 
 const TESLA_SERVER_HOSTNAME: string = 'owner-api.teslamotors.com';
 const TESLA_CLIENT_ID: string = '81527cff06843c8634fdc09e8ac0abefb46ac849f38fe1e431c2ef2106796384';
@@ -70,41 +70,44 @@ export class ApiCaller {
         return r.access_token;
     }
 
-    /*
     async getVehicleList() {
         const path = '/api/1/vehicles';
-        let options = this._getGetOptions(path);
-        return await this._call<VehicleCountResponse>(options);
+        const url = this._getURL(path);
+        let options = this._getGetOptions();
+        return await this._call<VehicleCountResponse>(url, options);
     }
 
     async getVehicleData(id: string) {
         const path = `/api/1/vehicles/${id}/vehicle_data`;
-        let options = this._getGetOptions(path);
+        const url = this._getURL(path);
+        let options = this._getGetOptions();
         // TODO : Define the return type
-        return await this._call<any>(options);
+        return await this._call<any>(url, options);
     }
 
     async wakeUp(id: string) {
         const path = `/api/1/vehicles/${id}/wake_up`;
-        let options = this._getPostOptions(path);
-        return await this._call<BasicVehicleCallResponse>(options);
+        const url = this._getURL(path);
+        let options = this._getPostOptions();
+        return await this._call<BasicVehicleCallResponse>(url, options);
     }
 
     async climateControlOn(id: string) {
         const path = `/api/1/vehicles/${id}/command/auto_conditioning_start`;
-        let options = this._getPostOptions(path);
-        return await this._call<BasicVehicleCallResponse>(options);
+        const url = this._getURL(path);
+        let options = this._getPostOptions();
+        return await this._call<BasicVehicleCallResponse>(url, options);
     }
 
     async climateControlOff(id: string) {
         const path = `/api/1/vehicles/${id}/command/auto_conditioning_stop`;
-        let options = this._getPostOptions(path);
-        return await this._call<BasicVehicleCallResponse>(options);
+        const url = this._getURL(path);
+        let options = this._getPostOptions();
+        return await this._call<BasicVehicleCallResponse>(url, options);
     }
-    */
 
     async _call<T>(url: URL, options: RequestInitWithHeaders) {
-        const res = await fetch(url, options);
+        const res = await fetch(url.toString(), options);
         if (res.status !== 200) {
             console.error(`Did not get a 200 status code, got a ${res.status} instead. statusText: ${res.statusText}`);
             // console.log('headers:', res.headers);
@@ -120,12 +123,14 @@ export class ApiCaller {
         return options;
     }
 
-    _getPostOptions(postData: any): RequestInitWithHeaders {
+    _getPostOptions(postData?: any): RequestInitWithHeaders {
         let options = this._getCommonOptions();
         options.method = 'POST';
         options.headers.append('Content-Type', 'application/json');
-        options.body = JSON.stringify(postData);
-        options.headers.append('Content-Length', '' + options.body.length);
+        if (postData) {
+            options.body = JSON.stringify(postData);
+            options.headers.append('Content-Length', '' + options.body.length);
+        }
         return options;
     }
 
