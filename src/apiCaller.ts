@@ -7,7 +7,7 @@ const TESLA_CLIENT_SECRET: string = 'c7257eb71a564034f9419ee651c7d0e5f7aa6bfbd18
 const API_USER_AGENT = 'Mozilla/5.0 (Linux; Android 9.0.0; VS985 4G Build/LRX21Y; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/58.0.3029.83 Mobile Safari/537.36';
 const API_X_Tesla_User_Agent = 'TeslaApp/3.4.4-350/fad4a582e/android/9.0.0';
 
-// doc : https://www.teslaapi.io/  or  https://tesla-api.timdorr.com/
+
 
 type VehicleInfo = {
     id: number;
@@ -79,6 +79,12 @@ export class ApiCaller {
 
     async getVehicleData(id: string) {
         const path = `/api/1/vehicles/${id}/vehicle_data`;
+        // GET /api/1/vehicles/{id}/data_request/charge_state
+        // GET /api/1/vehicles/{id}/data_request/climate_state
+        // GET /api/1/vehicles/{id}/data_request/drive_state
+        // GET /api/1/vehicles/{id}/data_request/gui_settings
+        // GET /api/1/vehicles/{id}/data_request/vehicle_state
+        // GET /api/1/vehicles/{id}/data_request/vehicle_config
         const url = this._getURL(path);
         let options = this._getGetOptions();
         // TODO : Define the return type
@@ -103,6 +109,18 @@ export class ApiCaller {
         const path = `/api/1/vehicles/${id}/command/auto_conditioning_stop`;
         const url = this._getURL(path);
         let options = this._getPostOptions();
+        return await this._call<BasicVehicleCallResponse>(url, options);
+    }
+
+    async closeWindows(id: string, lat: number, long: number) {
+        const path = `/api/1/vehicles/${id}/command/window_control`;
+        let postData = {
+            command: 'close',
+            lat,
+            long,
+        };
+        const url = this._getURL(path);
+        let options = this._getPostOptions(postData);
         return await this._call<BasicVehicleCallResponse>(url, options);
     }
 
