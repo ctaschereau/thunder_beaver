@@ -10,7 +10,8 @@ Run permission is to allow notifications to be displayed when turning on the cli
 
 
 ### TODOs
-- Daemon mode?
+- Prompt for password in a better way (not in command line history)
 - Storing the access key and vehicle list in the user's profile
-- Support for multiple vehicles
 - Command to clear stored access tokens
+- Support for multiple vehicles
+- Daemon mode?
